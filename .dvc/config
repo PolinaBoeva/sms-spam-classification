@@ -1,0 +1,6 @@
+[core]
+    remote = local
+['remote "local_remote"']
+    url = ../storage
+['remote "local"']
+    url = cache
