@@ -1,6 +1,6 @@
-from pathlib import Path
 import subprocess
 import urllib.request
+from pathlib import Path
 
 
 def download_sms_data(data_dir: Path) -> Path:
@@ -15,7 +15,7 @@ def download_sms_data(data_dir: Path) -> Path:
     print("Trying to pull data with DVC...")
     try:
         result = subprocess.run(
-            ["dvc", "pull", str(dvc_file)], capture_output=True, text=True
+            ["dvc", "pull", str(dvc_file)], check=False, capture_output=True, text=True
         )
         if result.returncode == 0 and raw_path.exists():
             print("Data successfully pulled via DVC")

@@ -1,10 +1,13 @@
-import torch
-import torch.nn as nn
 import lightning.pytorch as pl
+import torch
+from torch import nn
 from torchmetrics.classification import BinaryAccuracy, BinaryF1Score
 
 
 class SMSLSTMClassifier(pl.LightningModule):
+    THRESHOLD = 0.5
+
+    # ruff: noqa: PLR0913
     def __init__(
         self,
         vocab_size: int,
@@ -44,7 +47,7 @@ class SMSLSTMClassifier(pl.LightningModule):
 
     def forward(self, x):
         embedded = self.embedding(x)
-        lstm_out, (hidden, cell) = self.lstm(embedded)
+        lstm_out, _ = self.lstm(embedded)
 
         mask = (x != 0).float().unsqueeze(-1)
         masked_out = lstm_out * mask
@@ -61,7 +64,7 @@ class SMSLSTMClassifier(pl.LightningModule):
         logits = self(x)
         loss = self.criterion(logits, y.float())
         probs = torch.sigmoid(logits)
-        preds = (probs > 0.5).int()
+        preds = (probs > self.THRESHOLD).int()
         return loss, preds, y
 
     def training_step(self, batch, batch_idx):

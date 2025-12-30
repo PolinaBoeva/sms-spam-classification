@@ -1,19 +1,20 @@
-import mlflow
+from pathlib import Path
+
 import fire
 import git
-from pathlib import Path
-from hydra import compose, initialize
-from omegaconf import OmegaConf
 import lightning.pytorch as pl
-from lightning.pytorch.callbacks import ModelCheckpoint, RichProgressBar
+import mlflow
+from hydra import compose, initialize
+from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, RichProgressBar
 from lightning.pytorch.loggers import MLFlowLogger
+from omegaconf import OmegaConf
 
-from lightning.pytorch.callbacks import EarlyStopping
-from .download import download_sms_data
-from .data.dataset import SMSDataModule
-from .models.lstm_classifier import SMSLSTMClassifier
+from spam_classifier.data.dataset import SMSDataModule
+from spam_classifier.download import download_sms_data
+from spam_classifier.models.lstm_classifier import SMSLSTMClassifier
 
 
+# ruff: noqa: PLR0915
 def train(config_name: str = "config", **kwargs):
     overrides = [f"{k.replace('__', '.')}={v}" for k, v in kwargs.items()]
 
@@ -32,10 +33,9 @@ def train(config_name: str = "config", **kwargs):
     experiment = mlflow.get_experiment_by_name(experiment_name)
     if experiment is None:
         experiment_id = mlflow.create_experiment(experiment_name)
-        print(f"Create'{experiment_name}' с ID: {experiment_id}")
+        print(f"Create'{experiment_name}' with ID: {experiment_id}")
     else:
-        print(f"'{experiment_name}' exist (ID: {experiment.experiment_id})")
-
+        print(f"Experiment '{experiment_name}' exists (ID: {experiment.experiment_id})")
     mlflow.set_experiment(experiment_name)
 
     with mlflow.start_run() as run:
