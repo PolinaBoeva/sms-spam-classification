@@ -14,9 +14,8 @@ from .data.dataset import SMSDataModule
 from .models.lstm_classifier import SMSLSTMClassifier
 
 
-def train(config_name: str = "config", overrides: list[str] | None = None):
-    if overrides is None:
-        overrides = []
+def train(config_name: str = "config", **kwargs):
+    overrides = [f"{k.replace('__', '.')}={v}" for k, v in kwargs.items()]
 
     with initialize(config_path="../configs", version_base=None, job_name="sms_train"):
         cfg = compose(config_name=config_name, overrides=overrides)
