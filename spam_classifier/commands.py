@@ -16,7 +16,7 @@ from spam_classifier.models.lstm_classifier import SMSLSTMClassifier
 
 logging.basicConfig(level=logging.INFO)
 
-logger = logging.getLogger("spam_classifier")
+logger = logging.getLogger(__name__)
 
 
 # ruff: noqa: PLR0915

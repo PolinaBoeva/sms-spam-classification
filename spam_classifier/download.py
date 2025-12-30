@@ -3,7 +3,7 @@ import subprocess
 import urllib.request
 from pathlib import Path
 
-logger = logging.getLogger("spam_classifier")
+logger = logging.getLogger(__name__)
 
 
 def download_sms_data(data_dir: Path) -> Path:
