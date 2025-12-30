@@ -1,3 +1,4 @@
+import logging
 import re
 from collections import Counter, OrderedDict
 from pathlib import Path
@@ -7,6 +8,8 @@ import pandas as pd
 import torch
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
+
+logger = logging.getLogger("spam_classifier")
 
 
 def simple_tokenizer(text: str, max_length: int = 100):
@@ -58,7 +61,7 @@ class SMSDataModule(pl.LightningDataModule):
         df = pd.read_csv(data_path, sep="\t", header=None, names=["label", "text"])
         df["label"] = (df["label"] == "spam").astype(int)
 
-        print(f"{len(df)} SMS ({df['label'].mean():.1%} spam)")
+        logger.info(f"{len(df)} SMS ({df['label'].mean():.1%} spam)")
 
         train_texts, temp_texts, train_labels, temp_labels = train_test_split(
             df["text"],
@@ -87,7 +90,7 @@ class SMSDataModule(pl.LightningDataModule):
             }
         )
 
-        print(f"Vocab size: {len(self.vocab)} (top-10k train)")
+        logger.info(f"Vocab size: {len(self.vocab)} (top-10k train)")
 
         self.train_dataset = SMSDataset(
             train_texts.tolist(), train_labels.tolist(), self.vocab
@@ -99,7 +102,7 @@ class SMSDataModule(pl.LightningDataModule):
             test_texts.tolist(), test_labels.tolist(), self.vocab
         )
 
-        print(
+        logger.info(
             f"Datasets: train={len(self.train_dataset)}, val={len(self.val_dataset)}, test={len(self.test_dataset)}"
         )
 

@@ -18,6 +18,7 @@ dependencies = [
     "torch>=2.9.1",
     "torchmetrics>=1.8.2",
     "urllib3>=2.6.2",
+    "logging>=0.4.9.6",
 ]
 [dependency-groups]
 dev = [

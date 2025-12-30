@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import fire
@@ -13,6 +14,10 @@ from spam_classifier.data.dataset import SMSDataModule
 from spam_classifier.download import download_sms_data
 from spam_classifier.models.lstm_classifier import SMSLSTMClassifier
 
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger("spam_classifier")
+
 
 # ruff: noqa: PLR0915
 def train(config_name: str = "config", **kwargs):
@@ -22,8 +27,8 @@ def train(config_name: str = "config", **kwargs):
         cfg = compose(config_name=config_name, overrides=overrides)
 
     config = OmegaConf.to_container(cfg, resolve=True)
-    print("Config loaded")
-    print(f"MLflow tracking URI: {config['mlflow']['tracking_uri']}")
+    logger.info("Config loaded")
+    logger.info(f"MLflow tracking URI: {config['mlflow']['tracking_uri']}")
 
     tracking_uri = config["mlflow"]["tracking_uri"]
     experiment_name = config["mlflow"]["experiment_name"]
@@ -33,14 +38,16 @@ def train(config_name: str = "config", **kwargs):
     experiment = mlflow.get_experiment_by_name(experiment_name)
     if experiment is None:
         experiment_id = mlflow.create_experiment(experiment_name)
-        print(f"Create'{experiment_name}' with ID: {experiment_id}")
+        logger.info(f"Create'{experiment_name}' with ID: {experiment_id}")
     else:
-        print(f"Experiment '{experiment_name}' exists (ID: {experiment.experiment_id})")
+        logger.info(
+            f"Experiment '{experiment_name}' exists (ID: {experiment.experiment_id})"
+        )
     mlflow.set_experiment(experiment_name)
 
     with mlflow.start_run() as run:
         run_id = run.info.run_id
-        print(f"MLflow Run started: {run_id}")
+        logger.info(f"MLflow Run started: {run_id}")
 
         Path("outputs/models/lstm").mkdir(parents=True, exist_ok=True)
 
@@ -51,10 +58,10 @@ def train(config_name: str = "config", **kwargs):
             batch_size=config["data"]["batch_size"],
         )
         data_module.setup()
-        print(
+        logger.info(
             f"Dataset sizes: train={len(data_module.train_dataset)}, val={len(data_module.val_dataset)}"
         )
-        print(f"Vocab size: {len(data_module.vocab)}")
+        logger.info(f"Vocab size: {len(data_module.vocab)}")
 
         model = SMSLSTMClassifier(
             vocab_size=len(data_module.vocab),
@@ -75,9 +82,11 @@ def train(config_name: str = "config", **kwargs):
             repo = git.Repo(search_parent_directories=True)
             mlflow.log_param("git_commit", repo.head.object.hexsha)
             mlflow.log_param("git_branch", repo.active_branch.name)
-            print(f"GIT: {repo.active_branch.name} @ {repo.head.object.hexsha[:8]}")
+            logger.info(
+                f"GIT: {repo.active_branch.name} @ {repo.head.object.hexsha[:8]}"
+            )
         except Exception as e:
-            print(f"GIT info not available: {e}")
+            logger.info(f"GIT info not available: {e}")
             mlflow.log_param("git_commit", "no_git")
 
         mlf_logger = MLFlowLogger(
@@ -85,7 +94,7 @@ def train(config_name: str = "config", **kwargs):
             tracking_uri=tracking_uri,
             run_id=run_id,
         )
-        print(f"MLflow Logger created with run_id: {run_id}")
+        logger.info(f"MLflow Logger created with run_id: {run_id}")
 
         checkpoint_callback = ModelCheckpoint(
             dirpath="outputs/models/lstm",
@@ -107,10 +116,10 @@ def train(config_name: str = "config", **kwargs):
             log_every_n_steps=10,
         )
 
-        print("Starting training...")
+        logger.info("Starting training...")
         trainer.fit(model, datamodule=data_module)
 
-        print("Running test...")
+        logger.info("Running test...")
         test_results = trainer.test(model, datamodule=data_module)
 
         if test_results:
@@ -121,12 +130,12 @@ def train(config_name: str = "config", **kwargs):
             mlflow.log_artifact(
                 checkpoint_callback.best_model_path, artifact_path="models"
             )
-            print(f"Best model logged: {checkpoint_callback.best_model_path}")
+            logger.info(f"Best model logged: {checkpoint_callback.best_model_path}")
 
-        print("Training finished")
-        print(f"Best checkpoint: {checkpoint_callback.best_model_path}")
-        print(f"MLflow Run ID: {run_id}")
-        print(f"View results: mlflow ui  (or open {tracking_uri})")
+        logger.info("Training finished")
+        logger.info(f"Best checkpoint: {checkpoint_callback.best_model_path}")
+        logger.info(f"MLflow Run ID: {run_id}")
+        logger.info(f"View results: mlflow ui  (or open {tracking_uri})")
 
 
 def download():
